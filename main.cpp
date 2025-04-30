@@ -19,10 +19,6 @@ int main()
         return 1;
     }
 
-    /// Per visualizzare online le mesh:
-    /// 1. Convertire i file .inp in file .vtu con https://meshconverter.it/it
-    /// 2. Caricare il file .vtu su https://kitware.github.io/glance/app/
-
     Gedim::UCDUtilities utilities;
     {
         vector<Gedim::UCDProperty<double>> cell0Ds_properties(1);
@@ -69,7 +65,7 @@ int main()
     // Punto 1: check marker punti
     cout<<"Check dei markers per Cells0Ds"<<endl;
     for (const auto& coppia : mesh.MarkerCell0Ds) {
-        std::cout << coppia.first << ": ";
+        cout << coppia.first << ": ";
     
         for (const auto& elem : coppia.second) {
             cout << elem << " ";
@@ -77,6 +73,7 @@ int main()
     
         cout << endl;
     }
+    cout << "I marker sono corretti" <<endl;
 
     cout << "\nCheck dei markers per Cells1Ds" << endl;
 
@@ -89,11 +86,13 @@ int main()
     
         cout << '\n';
     }
+    cout << "I marker sono corretti" <<endl;
+
 
     // Punto 2: check lunghezza lati
     cout<<"\nCheck lunghezza lati"<<endl;
     bool check = true;
-    double epsilon = std::numeric_limits<double>::epsilon();
+    double epsilon = numeric_limits<double>::epsilon();
     for (int i = 0; i < mesh.Cell1DsExtrema.cols(); i+=2)
     {
         unsigned int punto1_id = mesh.Cell1DsExtrema(i);
@@ -110,46 +109,44 @@ int main()
         if (lunghezza < epsilon)
             cerr<<"Il lato ha lunghezza nulla"<<endl;
             check = false;
-
     }
     if (check = true)
-        cout<<"I lati sono corretti"<<endl;
+        cout<<"I lati sono corretti: hanno lunghezza non nulla."<<endl;
 
 
-
-
-
-    /* 
-    
-    for (unsigned int  i= 0; i < mesh.Cell2DsVertices.size(); i++)
+    // Punto 3: check area poligoni
+    cout << "\nCheck area poligoni" << endl;
+    bool check_area = true;
+    for (unsigned int i = 0; i < mesh.Cell2DsVertices.size(); i++)
     {
-        unsigned int n = mesh.Cell2DsVertices[i].size();
-        std::cout << "n: " << n << std::endl;
-        cout<<"i: "<<i<< endl;
+        double area = 0.0; 
 
         for (unsigned int j = 0; j < mesh.Cell2DsVertices[i].size(); j++)
         {
-
-
-
             unsigned int chiave = mesh.Cell2DsVertices[i][j];
-            if (mesh.IdCell0Ds.find(chiave) != mesh.IdCell0Ds.end()) {
-                std::cout << "Valori associati alla chiave " << chiave << ": ";
-                cout <<mesh.IdCell0Ds[chiave][0]<<" " << mesh.IdCell0Ds[chiave][1]<<endl;
+            if (mesh.IdCell0Ds.find(chiave) != mesh.IdCell0Ds.end()) 
+            {
+                double x1 = mesh.IdCell0Ds[chiave][0];
+                double y1 = mesh.IdCell0Ds[chiave][1];
 
-            } else {
-                std::cout << "Chiave " << chiave << " non trovata." << std::endl;
-            }
+                unsigned int nextI = (j + 1) % mesh.Cell2DsVertices[i].size(); // Indice del vertice successivo: j + 1 prende l'elemento successivo e % size fa in modo che quando j è l'ultimo indice, torni a 0
+                unsigned int nextK = mesh.Cell2DsVertices[i][nextI];
+                double x2 = mesh.IdCell0Ds[nextK][0];
+                double y2 = mesh.IdCell0Ds[nextK][1];
 
-        
-
-        
-
-
+                area += (x1 * y2 - x2 * y1);
+            } 
         }
-        std::cout << std::endl;
 
-    */
+        area = 0.5*abs(area); 
+
+        if (area < epsilon*epsilon) //Per coerenza, confronto l'area con epsilon^2
+            cerr << "Il poligono ha area nulla." << endl;
+            check_area = false;
+    }
+
+    if (check_area = true)
+    cout << "Le aree sono corrette: sono tutte non nulle" << endl;
     
     return 0;
     }
